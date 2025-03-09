@@ -16,43 +16,43 @@
             </button>
           </div>
         </div>
-        <div class="message-wrapper" v-else-if="!isHidden">
+        <div class="message-wrapper" v-else>
           <template v-for="(message, index) in messages" :key="index">
             <div class="user-message" v-if="message.type === 'user'">
-              <div class="message-bubble">
-                <div class="message-content">{{ message.content }}</div>
-                <div class="message-info">
-                  <span class="message-time">{{ message.time }}</span>
-                </div>
+              <div class="message-content">{{ message.content }}</div>
+              <div class="message-actions">
+                <button @click="copyMessage(message.content)" title="复制">
+                  <span class="action-icon">📋</span>
+                </button>
               </div>
             </div>
 
             <div class="ai-message" v-else>
-              <div class="message-bubble" :class="{ error: message.isError }">
-                <div class="message-content">
-                  <pre>{{ message.content }}</pre>
-                </div>
-                <div class="message-info">
-                  <span class="message-time">{{ message.time }}</span>
-                  <span class="thinking-time" v-if="message.thinkingTime"
-                    >思考用时: {{ message.thinkingTime }}秒</span
-                  >
-                </div>
+              <div class="message-content">
+                <pre>{{ message.content }}</pre>
+              </div>
+              <div class="message-actions">
+                <button
+                  @click="toggleLike(index)"
+                  :class="{ 'liked': message.liked }"
+                  title="点赞"
+                >
+                  <span class="action-icon">{{ message.liked ? '❤️' : '🤍' }}</span>
+                </button>
+                <button @click="regenerateMessage(index)" title="重新生成">
+                  <span class="action-icon">🔄</span>
+                </button>
+                <button @click="copyMessage(message.content)" title="复制">
+                  <span class="action-icon">📋</span>
+                </button>
               </div>
             </div>
           </template>
 
           <div class="ai-message thinking" v-if="isLoading">
-            <div class="message-bubble thinking">
-              <div class="thinking-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-              <div class="thinking-process">
-                <p>正在思考您的问题...</p>
-                <p>• {{ reasoningContent[currentReasoningStep] }}</p>
-              </div>
+            <div class="thinking-process">
+              <p>正在思考您的问题...</p>
+              <p>• {{ reasoningContent[currentReasoningStep] }}</p>
             </div>
           </div>
         </div>
@@ -91,8 +91,7 @@ interface ChatMessage {
   type: 'user' | 'ai'
   content: string
   isError?: boolean
-  time?: string
-  thinkingTime?: string
+  liked?: boolean
 }
 
 const STORAGE_KEY = 'chat_history'
@@ -100,7 +99,6 @@ const STORAGE_KEY = 'chat_history'
 const userInput = ref('')
 const messages = ref<ChatMessage[]>([])
 const isLoading = ref(false)
-const isHidden = ref(false)
 const reasoningContent = ref([
   '正在分析您的问题...',
   '思考可能的解决方案...',
@@ -112,7 +110,7 @@ const currentReasoningStep = ref(0)
 
 const openai = new OpenAI({
   apiKey: import.meta.env.VITE_DASHSCOPE_API_KEY,
-  baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+  baseURL: import.meta.env.VITE_API_URL,
   dangerouslyAllowBrowser: true,
 })
 
@@ -129,21 +127,119 @@ const saveChatHistory = () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.value))
 }
 
+// 复制消息内容
+const copyMessage = async (content: string) => {
+  try {
+    await navigator.clipboard.writeText(content)
+    alert('已复制到剪贴板')
+  } catch (err) {
+    console.error('复制失败:', err)
+    alert('复制失败，请手动复制')
+  }
+}
+
+// 切换点赞状态
+const toggleLike = (index: number) => {
+  if (messages.value[index]) {
+    messages.value[index].liked = !messages.value[index].liked
+    saveChatHistory()
+  }
+}
+
+// 重新生成消息
+const regenerateMessage = async (index: number) => {
+  if (isLoading.value) return
+
+  const targetMessage = messages.value[index]
+  if (!targetMessage || targetMessage.type !== 'ai') return
+
+  // 找到对应的用户输入
+  let userMessageIndex = index - 1
+  while (userMessageIndex >= 0 && messages.value[userMessageIndex].type !== 'user') {
+    userMessageIndex--
+  }
+  if (userMessageIndex < 0) return
+
+  const userMessage = messages.value[userMessageIndex]
+
+  try {
+    isLoading.value = true
+    currentReasoningStep.value = 0
+    let aiResponse = ''
+
+    const reasoningInterval = setInterval(() => {
+      if (currentReasoningStep.value < reasoningContent.value.length - 1) {
+        currentReasoningStep.value++
+      }
+    }, 2000)
+
+    const stream = await openai.chat.completions.create({
+      model: 'deepseek-r1-distill-qwen-1.5b',
+      messages: [
+        {
+          role: 'system',
+          content:
+            '你是一个友好的中文AI助手。请始终使用中文回答，可以在合适的时候使用表情符号来增加交互的趣味性。例如：😊 🤔 👍 等。',
+        },
+        { role: 'user', content: userMessage.content },
+      ],
+      stream: true,
+    })
+
+    for await (const chunk of stream) {
+      const response = chunk as ChatResponse
+      if (!response.choices?.length) continue
+
+      const delta = response.choices[0].delta
+
+      if (delta.content) {
+        aiResponse += delta.content
+      }
+    }
+
+    clearInterval(reasoningInterval)
+
+    // 更新现有消息而不是添加新消息
+    messages.value[index] = {
+      type: 'ai',
+      content: aiResponse,
+      liked: false
+    }
+    saveChatHistory()
+
+    await nextTick()
+    const chatContainer = document.querySelector('.chat-container')
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight
+    }
+  } catch (error) {
+    const chatError = error as ChatError
+    console.error('错误信息:', chatError.message)
+    if (chatError.code) console.error('错误代码:', chatError.code)
+    if (chatError.status) console.error('状态码:', chatError.status)
+    messages.value[index] = {
+      type: 'ai',
+      content: '抱歉，重新生成回答时发生错误，请查看控制台了解详细信息。',
+      isError: true
+    }
+    saveChatHistory()
+  } finally {
+    isLoading.value = false
+  }
+}
+
 async function sendMessage() {
   if (!userInput.value || isLoading.value) return
 
   const currentInput = userInput.value
   userInput.value = ''
-  const startTime = Date.now()
   const userMessage: ChatMessage = {
     type: 'user',
-    content: currentInput,
-    time: new Date().toLocaleTimeString(),
+    content: currentInput
   }
   messages.value.push(userMessage)
   saveChatHistory()
 
-  // 添加自动滚动到底部
   await nextTick()
   const chatContainer = document.querySelector('.chat-container')
   if (chatContainer) {
@@ -186,18 +282,14 @@ async function sendMessage() {
     }
 
     clearInterval(reasoningInterval)
-    const endTime = Date.now()
-    const thinkingTimeInSeconds = ((endTime - startTime) / 1000).toFixed(1)
     const aiMessage: ChatMessage = {
       type: 'ai',
       content: aiResponse,
-      time: new Date().toLocaleTimeString(),
-      thinkingTime: thinkingTimeInSeconds,
+      liked: false
     }
     messages.value.push(aiMessage)
     saveChatHistory()
 
-    // 添加AI回复后的自动滚动
     await nextTick()
     if (chatContainer) {
       chatContainer.scrollTop = chatContainer.scrollHeight
@@ -210,8 +302,7 @@ async function sendMessage() {
     const errorMessage: ChatMessage = {
       type: 'ai',
       content: '抱歉，发生了一些错误，请查看控制台了解详细信息。',
-      isError: true,
-      time: new Date().toLocaleTimeString(),
+      isError: true
     }
     messages.value.push(errorMessage)
     saveChatHistory()
@@ -230,4 +321,56 @@ onMounted(() => {
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+.message-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.user-message:hover .message-actions,
+.ai-message:hover .message-actions {
+  opacity: 1;
+}
+
+.message-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.message-actions button:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.message-actions .action-icon {
+  font-size: 16px;
+}
+
+.user-message,
+.ai-message {
+  display: flex;
+  align-items: flex-start;
+}
+
+.liked {
+  animation: likeAnimation 0.3s ease;
+}
+
+@keyframes likeAnimation {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+</style>

@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import AIChat from './components/AIChat.vue'
-import SidebarPanel from './components/SidebarPanel.vue'
 </script>
 
 <template>
   <main>
-    <SidebarPanel />
     <div class="content-area">
       <AIChat />
       <div class="icp-info">
@@ -27,7 +25,6 @@ main {
 .content-area {
   flex: 1;
   padding: 0 20px;
-  margin-left: 300px;
   position: relative;
 }
 
@@ -50,11 +47,5 @@ main {
   color: #333;
 }
 
-@media (max-width: 768px) {
-  .content-area {
-    margin-left: 0;
-    padding: 0 16px;
-    width: 100%;
-  }
-}
+
 </style>

@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">yuezhicai-ai</string>
-    <string name="title_activity_main">yuezhicai-ai</string>
-    <string name="package_name">com.xiaizizi.app</string>
-    <string name="custom_url_scheme">com.xiaizizi.app</string>
-</resources>
