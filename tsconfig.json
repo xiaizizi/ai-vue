@@ -1,17 +1,20 @@
 {
-  "files": [],
+  // 配置TypeScript编译器的选项
+  "files": [], // 编译的文件列表
   "references": [
+    // 引用的配置文件
     {
-      "path": "./tsconfig.node.json"
+      "path": "./tsconfig.node.json" // 引用 node 环境的配置文件
     },
     {
-      "path": "./tsconfig.app.json"
+      "path": "./tsconfig.app.json" // 引用应用的配置文件
     },
     {
-      "path": "./tsconfig.vitest.json"
+      "path": "./tsconfig.vitest.json" // 引用 Vitest 测试的配置文件
     }
   ],
   "compilerOptions": {
-    "module": "NodeNext"
+    // 编译器选项
+    "module": "NodeNext" // 指定生成 NodeNext 模块系统代码
   }
 }

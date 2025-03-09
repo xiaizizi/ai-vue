@@ -1,6 +1,6 @@
-{
-  "extends": "@tsconfig/node22/tsconfig.json",
-  "include": [
+{ // 配置TypeScript编译器的选项
+  "extends": "@tsconfig/node22/tsconfig.json", // 继承自 @tsconfig/node22/tsconfig.json 配置文件
+  "include": [ // 包含以下文件进行编译
     "vite.config.*",
     "vitest.config.*",
     "cypress.config.*",
@@ -8,12 +8,12 @@
     "playwright.config.*",
     "eslint.config.*"
   ],
-  "compilerOptions": {
-    "noEmit": true,
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+  "compilerOptions": { // 编译器选项
+    "noEmit": true, // 不生成输出文件
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo", // 指定 TypeScript 构建信息文件的路径
 
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "types": ["node"]
+    "module": "ESNext", // 指定生成哪个模块系统代码
+    "moduleResolution": "Bundler", // 指定模块解析策略
+    "types": ["node"] // 指定要包含的类型定义文件
   }
 }

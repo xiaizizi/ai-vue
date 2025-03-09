@@ -1,9 +1,16 @@
+# 配置JavaScript、TypeScript和Vue文件的编码为UTF-8
 [*.{js,jsx,mjs,cjs,ts,tsx,mts,cts,vue}]
 charset = utf-8
+# 设置缩进大小为2个空格
 indent_size = 2
+# 设置缩进样式为空格
 indent_style = space
+# 在文件末尾插入新行
 insert_final_newline = true
+# 去除行尾的空白字符
 trim_trailing_whitespace = true
 
+# 设置换行符为LF
 end_of_line = lf
+# 设置每行的最大长度为100个字符
 max_line_length = 100

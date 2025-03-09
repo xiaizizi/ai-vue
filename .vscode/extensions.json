@@ -1,9 +1,9 @@
-{
+{ // 推荐的VSCode扩展列表
   "recommendations": [
-    "Vue.volar",
-    "vitest.explorer",
-    "dbaeumer.vscode-eslint",
-    "EditorConfig.EditorConfig",
-    "esbenp.prettier-vscode"
+    "Vue.volar", // Vue 3的官方扩展
+    "vitest.explorer", // Vitest测试框架的扩展
+    "dbaeumer.vscode-eslint", // ESLint代码检查扩展
+    "EditorConfig.EditorConfig", // EditorConfig配置扩展
+    "esbenp.prettier-vscode" // Prettier代码格式化扩展
   ]
 }

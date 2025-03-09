@@ -1,64 +1,107 @@
+// 应用Android应用插件
 apply plugin: 'com.android.application'
 
+// 配置Android项目
 android {
+    // 应用的命名空间
     namespace "com.xiaizizi.app"
+    // 编译SDK版本
     compileSdk rootProject.ext.compileSdkVersion
+    // 默认配置
     defaultConfig {
+        // 应用ID
         applicationId "com.xiaizizi.app"
+        // 最小支持的SDK版本
         minSdkVersion rootProject.ext.minSdkVersion
+        // 目标SDK版本
         targetSdkVersion rootProject.ext.targetSdkVersion
+        // 版本号
         versionCode 1
+        // 版本名称
         versionName "1.0"
+        // 测试运行器
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // AAPT选项
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // 签名配置
     signingConfigs {
+        // 发布版本的签名配置
         release {
+            // 签名文件
             storeFile file('release-key.keystore')
+            // 签名文件密码
             storePassword 'your-store-password'
+            // 密钥别名
             keyAlias 'your-key-alias'
+            // 密钥密码
             keyPassword 'your-key-password'
         }
     }
+    // 构建类型
     buildTypes {
+        // 发布版本的构建配置
         release {
+            // 使用发布版本的签名配置
             signingConfig signingConfigs.release
+            // 是否启用代码混淆
             minifyEnabled false
+            // 代码混淆文件
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }
 
+// 依赖仓库配置
 repositories {
+    // 扁平目录仓库
     flatDir{
+        // 仓库目录
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
 }
 
-dependencies {
+// 依赖配置
+Dependencies {
+    // 引入libs目录下的所有jar文件
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    // 引入AndroidX AppCompat库
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    // 引入AndroidX CoordinatorLayout库
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    // 引入AndroidX Core SplashScreen库
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    // 引入Material Design库
     implementation "com.google.android.material:material:1.10.0"
+    // 引入Capacitor Android库
     implementation project(':capacitor-android')
+    // 引入JUnit测试库
     testImplementation "junit:junit:$junitVersion"
+    // 引入AndroidX JUnit扩展测试库
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    // 引入Espresso测试框架
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    // 引入Capacitor Cordova Android插件库
     implementation project(':capacitor-cordova-android-plugins')
 }
 
+// 应用Capacitor构建脚本
 apply from: 'capacitor.build.gradle'
 
+// 尝试应用Google Services插件
 try {
+    // 获取google-services.json文件
     def servicesJSON = file('google-services.json')
+    // 如果文件存在
     if (servicesJSON.text) {
+        // 应用Google Services插件
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {
+    // 记录日志
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
